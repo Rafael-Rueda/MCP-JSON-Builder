@@ -1,69 +1,78 @@
-# React + TypeScript + Vite
+# MCP JSON Builder
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**MCP JSON Builder** é uma ferramenta visual para criar, editar e exportar estruturas JSON complexas para modelagem de aplicações modulares. Ideal para documentação técnica, design de software orientado a módulos ou como base de comunicação entre times de desenvolvimento e produto.
 
-Currently, two official plugins are available:
+## ✨ Funcionalidades
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+-   ✅ Interface gráfica para construção de JSONs hierárquicos.
+-   🧩 Suporte a múltiplos módulos com descrições e listas de funcionalidades.
+-   🔄 Visualização em tempo real do JSON estruturado.
+-   💾 Botões integrados para salvar, exportar, importar e reverter mudanças (histórico).
+-   🤖 Geração automática de JSON com inteligência artificial.
+-   🌙 Suporte a modo escuro e claro.
 
-## Expanding the ESLint configuration
+---
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## 📦 Estrutura do JSON
 
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+O JSON gerado segue um modelo modular como o exemplo abaixo:
 
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```json
+{
+    "MCP": {
+        "ApplicationName": "ItemSalesPlatform",
+        "Purpose": "To facilitate the selling of items to clients online, including user registration and payment processing.",
+        "Modules": [
+            {
+                "ModuleName": "UserRegistration",
+                "Description": "Handles user sign-up, login, and profile management.",
+                "Features": [
+                    "User Sign-Up",
+                    "User Login",
+                    "Profile Management",
+                    "Password Recovery"
+                ]
+            },
+            {
+                "ModuleName": "ItemManagement",
+                "Description": "Allows for the addition, modification, and deletion of items for sale.",
+                "Features": [
+                    "Add New Items",
+                    "Edit Existing Items",
+                    "Delete Items",
+                    "Item Categories"
+                ]
+            }
+        ]
+    }
+}
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+---
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## 🚀 Como Usar
 
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+1. Clone o repositório ou abra o MCP JSON Builder em seu navegador.
+2. Use o painel lateral para adicionar campos, módulos e funcionalidades.
+3. Visualize o JSON em tempo real no painel de visualização.
+4. Use os botões:
+    - **Add Field**: Adiciona novos campos ou estruturas.
+    - **Save**: Salva seu progresso.
+    - **Export**: Exporta o JSON final.
+    - **Import**: Recarrega um JSON previamente salvo.
+    - **Generate JSON (AI)**: Cria sugestões de JSON automaticamente.
+5. Copie ou baixe o JSON final para uso em suas aplicações.
+
+---
+
+## 🧑‍💻 Tecnologias Utilizadas
+
+-   HTML/CSS/JavaScript
+-   JSON Viewer e Builder
+-   Integração com IA (para geração de estrutura)
+
+---
+
+## 📄 Licença
+
+Este projeto está licenciado sob a [MIT License](LICENSE).
