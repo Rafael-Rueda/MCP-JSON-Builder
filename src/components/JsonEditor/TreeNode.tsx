@@ -1,4 +1,4 @@
-import React, { memo, useMemo, useEffect } from "react";
+import React, { useMemo, useEffect, useState } from "react";
 import {
     ChevronRight,
     ChevronDown,
@@ -6,15 +6,10 @@ import {
     Plus,
     Trash2,
     Copy,
+    Check,
 } from "lucide-react";
 import { useJsonEditorStore } from "@/store/json-editor-store";
 import { Button } from "@/components/ui/button";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { type TreeNodeProps } from "@/types";
 import { toast } from "sonner";
@@ -45,6 +40,73 @@ function matchesSearchRecursive(
         return matchesSearchRecursive(value, [...path, key], searchLower);
     });
 }
+
+const CopyButton = ({ data }: { data: any }) => {
+    const [copied, setCopied] = useState(false);
+
+    const handleCopyClick = (e: React.MouseEvent) => {
+        e.stopPropagation(); // Previne que o clique propague
+
+        const text = JSON.stringify(data, null, 2);
+
+        // Método simples e confiável
+        const textarea = document.createElement("textarea");
+        textarea.value = text;
+        textarea.setAttribute("readonly", "");
+        textarea.style.position = "absolute";
+        textarea.style.left = "-9999px";
+        document.body.appendChild(textarea);
+
+        // Seleciona o texto
+        const selected =
+            document.getSelection()!.rangeCount > 0
+                ? document.getSelection()!.getRangeAt(0)
+                : false;
+
+        textarea.select();
+
+        let success = false;
+        try {
+            success = document.execCommand("copy");
+        } catch (err) {
+            console.error("Copy error:", err);
+        }
+
+        document.body.removeChild(textarea);
+
+        if (selected) {
+            document.getSelection()!.removeAllRanges();
+            document.getSelection()!.addRange(selected);
+        }
+
+        if (success) {
+            setCopied(true);
+            toast.success("Copied!");
+            setTimeout(() => setCopied(false), 2000);
+        } else {
+            // Fallback: mostra o modal
+            window.dispatchEvent(
+                new CustomEvent("show-copy-modal", { detail: { text } })
+            );
+        }
+    };
+
+    return (
+        <Button
+            variant="ghost"
+            size="icon"
+            className="h-5 w-5 opacity-0 group-hover:opacity-100"
+            onClick={handleCopyClick}
+            title="Copy this value"
+        >
+            {copied ? (
+                <Check className="h-3 w-3 text-green-500" />
+            ) : (
+                <Copy className="h-3 w-3" />
+            )}
+        </Button>
+    );
+};
 
 // Removendo o memo temporariamente para garantir re-renders
 export const TreeNode = ({ data, path, searchTerm = "" }: TreeNodeProps) => {
@@ -84,8 +146,45 @@ export const TreeNode = ({ data, path, searchTerm = "" }: TreeNodeProps) => {
     if (searchTerm && !matchesSearch) return null;
 
     const handleCopy = () => {
-        navigator.clipboard.writeText(JSON.stringify(data, null, 2));
-        toast.success("Copied to clipboard");
+        const text = JSON.stringify(data, null, 2);
+
+        // Cria um elemento textarea invisível
+        const textarea = document.createElement("textarea");
+        textarea.value = text;
+        textarea.style.position = "absolute";
+        textarea.style.left = "-9999px";
+        textarea.style.top = "0";
+        document.body.appendChild(textarea);
+
+        // Seleciona e copia o texto
+        textarea.select();
+        textarea.setSelectionRange(0, 99999); // Para mobile
+
+        try {
+            const successful = document.execCommand("copy");
+            if (successful) {
+                toast.success("Copied to clipboard");
+            } else {
+                // Se falhar, usa o modal como fallback
+                showCopyModal(text);
+            }
+        } catch (err) {
+            console.error("Copy failed:", err);
+            // Se falhar, usa o modal como fallback
+            showCopyModal(text);
+        }
+
+        // Remove o textarea
+        document.body.removeChild(textarea);
+    };
+
+    // Função auxiliar para mostrar um modal com o texto
+    const showCopyModal = (text: string) => {
+        // Cria um evento customizado para abrir um modal de cópia
+        window.dispatchEvent(
+            new CustomEvent("show-copy-modal", { detail: { text } })
+        );
+        toast.info("Select and copy the text from the modal");
     };
 
     const handleDelete = () => {
@@ -178,57 +277,52 @@ export const TreeNode = ({ data, path, searchTerm = "" }: TreeNodeProps) => {
                     </span>
                 )}
 
-                <div className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity">
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-6 w-6"
-                            >
-                                <Edit2 className="h-3 w-3" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                                onClick={() =>
-                                    window.dispatchEvent(
-                                        new CustomEvent("edit-json-value", {
-                                            detail: { path, value: data },
-                                        })
-                                    )
-                                }
-                            >
-                                <Edit2 className="h-4 w-4 mr-2" />
-                                Edit Value
-                            </DropdownMenuItem>
-                            {(isObject || isArray) && (
-                                <DropdownMenuItem
-                                    onClick={() =>
-                                        window.dispatchEvent(
-                                            new CustomEvent("add-json-field", {
-                                                detail: { path },
-                                            })
-                                        )
-                                    }
-                                >
-                                    <Plus className="h-4 w-4 mr-2" />
-                                    Add Field
-                                </DropdownMenuItem>
-                            )}
-                            <DropdownMenuItem onClick={handleCopy}>
-                                <Copy className="h-4 w-4 mr-2" />
-                                Copy
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                                onClick={handleDelete}
-                                className="text-destructive"
-                            >
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Delete
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
+                <div className="ml-auto flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <CopyButton data={data} />
+
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-5 w-5"
+                        onClick={() =>
+                            window.dispatchEvent(
+                                new CustomEvent("edit-json-value", {
+                                    detail: { path, value: data },
+                                })
+                            )
+                        }
+                        title="Edit value"
+                    >
+                        <Edit2 className="h-3 w-3" />
+                    </Button>
+
+                    {(isObject || isArray) && (
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-5 w-5"
+                            onClick={() =>
+                                window.dispatchEvent(
+                                    new CustomEvent("add-json-field", {
+                                        detail: { path },
+                                    })
+                                )
+                            }
+                            title="Add field"
+                        >
+                            <Plus className="h-3 w-3" />
+                        </Button>
+                    )}
+
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-5 w-5 text-destructive hover:text-destructive"
+                        onClick={handleDelete}
+                        title="Delete"
+                    >
+                        <Trash2 className="h-3 w-3" />
+                    </Button>
                 </div>
             </div>
 

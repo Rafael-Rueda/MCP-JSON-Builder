@@ -26,10 +26,14 @@ import {
     Minimize2,
     FileJson,
     Bot,
+    Copy,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import { GenerateJsonDialog } from "./GenerateJsonDialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
+import { RawJsonEditor } from "./RawJsonEditor";
+import { CopyModal } from "./CopyModal";
 
 // Debug component - remova depois de testar
 const DebugInfo = () => {
@@ -78,6 +82,28 @@ export function JsonEditor() {
     const [generatedJson, setGeneratedJson] = useState<string | null>(null);
     const [generatedDialogOpen, setGeneratedDialogOpen] = useState(false);
     const [treeKey, setTreeKey] = useState(0);
+
+    const [copyModalOpen, setCopyModalOpen] = useState(false);
+    const [copyModalText, setCopyModalText] = useState("");
+
+    useEffect(() => {
+        const handleShowCopyModal = (e: CustomEvent) => {
+            setCopyModalText(e.detail.text);
+            setCopyModalOpen(true);
+        };
+
+        window.addEventListener(
+            "show-copy-modal",
+            handleShowCopyModal as EventListener
+        );
+
+        return () => {
+            window.removeEventListener(
+                "show-copy-modal",
+                handleShowCopyModal as EventListener
+            );
+        };
+    }, []);
 
     useEffect(() => {
         // Força re-mount do tree quando expandedNodes muda significativamente
@@ -169,6 +195,30 @@ export function JsonEditor() {
 
     const handleGenerateJson = async () => {
         setGeneratedDialogOpen(true);
+    };
+
+    const handleCopy = () => {
+        const text = JSON.stringify(jsonData, null, 2);
+
+        // Cria um elemento de input temporário
+        const input = document.createElement("input");
+        input.style.position = "fixed";
+        input.style.opacity = "0";
+        input.value = text;
+        document.body.appendChild(input);
+        input.select();
+
+        try {
+            document.execCommand("copy");
+            toast.success("Copied to clipboard");
+        } catch (err) {
+            console.error("Copy failed:", err);
+
+            // Se falhar, pelo menos mostra o JSON em um alert para o usuário copiar
+            prompt("Copy the JSON below:", text);
+        } finally {
+            document.body.removeChild(input);
+        }
     };
 
     return (
@@ -338,33 +388,61 @@ export function JsonEditor() {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Editor */}
                     <div className="lg:col-span-2">
-                        <div className="rounded-lg border bg-card p-4">
-                            <h2 className="text-lg font-semibold mb-4">
-                                Editor
-                            </h2>
-
-                            <div className="font-mono text-sm" key={treeKey}>
-                                {Object.keys(jsonData).length === 0 ? (
-                                    <div className="text-center py-8 text-muted-foreground">
-                                        Empty JSON. Click "Add Field" to start.
+                        <div className="rounded-lg border bg-card p-4 flex justify-center items-center">
+                            <Tabs defaultValue="tree" className="w-full">
+                                <TabsList>
+                                    <TabsTrigger value="tree" asChild>
+                                        <h2 className="text-lg font-semibold">
+                                            Visual Editor
+                                        </h2>
+                                    </TabsTrigger>
+                                    <TabsTrigger value="text" asChild>
+                                        <h2 className="text-lg font-semibold">
+                                            Text Editor
+                                        </h2>
+                                    </TabsTrigger>
+                                </TabsList>
+                                <TabsContent value="tree">
+                                    <div
+                                        className="font-mono text-sm"
+                                        key={treeKey}
+                                    >
+                                        {Object.keys(jsonData).length === 0 ? (
+                                            <div className="text-center py-8 text-muted-foreground">
+                                                Empty JSON. Click "Add Field" to
+                                                start.
+                                            </div>
+                                        ) : (
+                                            <TreeNode
+                                                data={jsonData}
+                                                path={[]}
+                                                searchTerm={searchTerm}
+                                            />
+                                        )}
                                     </div>
-                                ) : (
-                                    <TreeNode
-                                        data={jsonData}
-                                        path={[]}
-                                        searchTerm={searchTerm}
-                                    />
-                                )}
-                            </div>
+                                </TabsContent>
+                                <TabsContent value="text">
+                                    <RawJsonEditor />
+                                </TabsContent>
+                            </Tabs>
                         </div>
                     </div>
 
                     {/* Preview */}
                     <div>
                         <div className="rounded-lg border bg-card p-4">
-                            <h2 className="text-lg font-semibold mb-4">
-                                Preview
-                            </h2>
+                            <div className="flex items-center justify-between mb-4">
+                                <h2 className="text-lg font-semibold">
+                                    Preview
+                                </h2>
+
+                                <Button
+                                    onClick={handleCopy}
+                                    className="text-md font-semibold flex gap-2"
+                                >
+                                    <Copy /> Copy
+                                </Button>
+                            </div>
 
                             <pre className="text-xs font-mono bg-muted p-4 rounded-md overflow-auto max-h-[600px]">
                                 {JSON.stringify(jsonData, null, 2)}
@@ -395,6 +473,12 @@ export function JsonEditor() {
                 currentValue={
                     "I have an application that sells items to clients. The business rules are as follow..."
                 }
+            />
+
+            <CopyModal
+                open={copyModalOpen}
+                onOpenChange={setCopyModalOpen}
+                text={copyModalText}
             />
         </div>
     );
