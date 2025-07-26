@@ -21,8 +21,11 @@ export function RawJsonEditor() {
 
     const handleChange = (newCode: string) => {
         setCode(newCode);
+    };
+
+    const parseJson = (codeToParse: string) => {
         try {
-            const parsed = JSON.parse(newCode);
+            const parsed = JSON.parse(codeToParse);
             setError(null);
             setJsonData(parsed);
         } catch (e: any) {
@@ -83,6 +86,7 @@ export function RawJsonEditor() {
                 value={code}
                 onValueChange={handleChange}
                 highlight={() => highlightedCode}
+                onBlur={() => parseJson(code)}
                 padding={16}
                 className="font-mono text-sm border rounded-md"
                 style={{
